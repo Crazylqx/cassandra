@@ -48,7 +48,7 @@ public class PageFaultTracer {
             return new Stat(time, pfCount);
         }
 
-        public void update(Stat start, Stat end) {
+        public synchronized void update(Stat start, Stat end) {
             time += end.time - start.time;
             pfCount += end.pfCount - start.pfCount;
             triggerCount += 1;
@@ -66,6 +66,10 @@ public class PageFaultTracer {
 
     public void logStats(Logger logger) {
         logger.info("[{}]: {}", name, stat.toString());
+    }
+
+    public void reset() {
+        stat = new Stat();
     }
 
     public void start() {

@@ -47,6 +47,7 @@ import org.apache.cassandra.dht.Murmur3Partitioner.LongToken;
 import org.apache.cassandra.index.transactions.UpdateTransaction;
 import org.apache.cassandra.io.sstable.Descriptor;
 import org.apache.cassandra.io.sstable.SSTableMultiWriter;
+import org.apache.cassandra.io.sstable.SimpleSSTableMultiWriter;
 import org.apache.cassandra.io.sstable.metadata.MetadataCollector;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.service.ActiveRepairService;
@@ -485,6 +486,7 @@ public class Memtable implements Comparable<Memtable>
             }
             tracer.end();
             tracer.logStats(logger);
+            writer.logTraceData();
 
             logger.info("processed partition count: {}", processed_count);
 

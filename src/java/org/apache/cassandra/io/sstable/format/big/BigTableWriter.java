@@ -194,6 +194,8 @@ public class BigTableWriter extends SSTableWriter
      */
     public RowIndexEntry append(UnfilteredRowIterator iterator)
     {
+        pfTracer.start();
+
         DecoratedKey key = iterator.partitionKey();
 
         if (key.getKey().remaining() > FBUtilities.MAX_UNSIGNED_SHORT)
@@ -242,6 +244,9 @@ public class BigTableWriter extends SSTableWriter
         catch (IOException e)
         {
             throw new FSWriteError(e, dataFile.getPath());
+        }
+        finally {
+            pfTracer.end();
         }
     }
 

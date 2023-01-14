@@ -75,6 +75,9 @@ public class BigTableZeroCopyWriter extends SSTable implements SSTableMultiWrite
                         Component.DIGEST,
                         Component.CRC);
 
+    public void logTraceData() {
+    }
+
     public BigTableZeroCopyWriter(Descriptor descriptor,
                                   TableMetadataRef metadata,
                                   LifecycleNewTracker lifecycleNewTracker,

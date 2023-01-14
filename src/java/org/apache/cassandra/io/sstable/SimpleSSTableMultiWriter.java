@@ -48,6 +48,10 @@ public class SimpleSSTableMultiWriter implements SSTableMultiWriter
         this.writer = writer;
     }
 
+    public void logTraceData() {
+        writer.pfTracer.logStats(logger);
+    }
+
     public boolean append(UnfilteredRowIterator partition)
     {
         RowIndexEntry<?> indexEntry = writer.append(partition);

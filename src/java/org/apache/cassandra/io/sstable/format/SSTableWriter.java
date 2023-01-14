@@ -43,6 +43,7 @@ import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.schema.Schema;
 import org.apache.cassandra.schema.TableMetadata;
 import org.apache.cassandra.schema.TableMetadataRef;
+import org.apache.cassandra.tracing.PageFaultTracer;
 import org.apache.cassandra.utils.concurrent.Transactional;
 
 /**
@@ -53,6 +54,8 @@ import org.apache.cassandra.utils.concurrent.Transactional;
  */
 public abstract class SSTableWriter extends SSTable implements Transactional
 {
+    public PageFaultTracer pfTracer = new PageFaultTracer("SSTableWriter");
+
     protected long repairedAt;
     protected UUID pendingRepair;
     protected boolean isTransient;
