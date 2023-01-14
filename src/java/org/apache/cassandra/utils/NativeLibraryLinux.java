@@ -83,6 +83,10 @@ public class NativeLibraryLinux implements NativeLibraryWrapper
 
     private static native long gettid() throws LastErrorException;
 
+    private static native long syscall(long id) throws LastErrorException;
+
+    private static final long SYS_get_majflt = 453;
+
     public int callMlockall(int flags) throws UnsatisfiedLinkError, RuntimeException
     {
         return mlockall(flags);
@@ -133,28 +137,7 @@ public class NativeLibraryLinux implements NativeLibraryWrapper
     }
 
     public long getThreadMajorPFCount() throws UnsatisfiedLinkError, RuntimeException {
-        // TODO: maybe a more efficient implemetation through syscall
-        long pid = getpid();
-        long tid = gettid();
-        // read from stat
-        // (12) majflt %lu
-        String filename = String.format("/proc/%d/task/%d/stat", pid, tid);
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(filename));
-            String line = reader.readLine();
-            reader.close();
-            // find the last ')' to skip `comm`
-            int i = line.lastIndexOf(')');
-            // skip 10 more blanks
-            for (int j = 0; j < 10; j++) {
-                i = line.indexOf(' ', i) + 1;
-            }
-            // extract the number
-            int j = line.indexOf(' ', i);
-            return Long.parseUnsignedLong(line, i, j, 10);
-        } catch (Exception e) {
-            throw new RuntimeException("Can not get major fault count: " + e.toString());
-        }
+        return syscall(SYS_get_majflt);
     }
 
     public boolean isAvailable()
