@@ -243,7 +243,7 @@ if [ "$LOCAL_JMX" = "yes" ]; then
   #JVM_OPTS="$JVM_OPTS -Dcassandra.jmx.local.port=$JMX_PORT"
   JVM_OPTS="$JVM_OPTS -Dcassandra.jmx.remote.port=$JMX_PORT"
   JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false"
-  JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=10.208.130.26"
+  JVM_OPTS="$JVM_OPTS -Djava.rmi.server.hostname=127.0.0.1"
 else
   JVM_OPTS="$JVM_OPTS -Dcassandra.jmx.remote.port=$JMX_PORT"
   # if ssl is enabled the same port cannot be used for both jmx and rmi so either
