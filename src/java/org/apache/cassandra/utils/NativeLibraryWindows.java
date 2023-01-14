@@ -119,6 +119,14 @@ public class NativeLibraryWindows implements NativeLibraryWrapper
         return GetCurrentProcessId();
     }
 
+    public long callGettid() throws UnsatisfiedLinkError, RuntimeException {
+        throw new RuntimeException("Not implemented yet");
+    }
+
+    public long getThreadMajorPFCount() throws UnsatisfiedLinkError, RuntimeException {
+        throw new RuntimeException("Not implemented yet");
+    }
+
     public boolean isAvailable()
     {
         return available;

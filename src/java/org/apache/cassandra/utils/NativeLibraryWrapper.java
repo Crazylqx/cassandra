@@ -41,4 +41,8 @@ interface NativeLibraryWrapper
     int callClose(int fd) throws UnsatisfiedLinkError, RuntimeException;
     Pointer callStrerror(int errnum) throws UnsatisfiedLinkError, RuntimeException;
     long callGetpid() throws UnsatisfiedLinkError, RuntimeException;
+
+    long callGettid() throws UnsatisfiedLinkError, RuntimeException;
+
+    long getThreadMajorPFCount() throws UnsatisfiedLinkError, RuntimeException;
 }

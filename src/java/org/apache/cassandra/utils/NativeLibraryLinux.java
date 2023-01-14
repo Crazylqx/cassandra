@@ -18,6 +18,8 @@
 
 package org.apache.cassandra.utils;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.Collections;
 
 import org.slf4j.Logger;
@@ -79,6 +81,8 @@ public class NativeLibraryLinux implements NativeLibraryWrapper
     private static native Pointer strerror(int errnum) throws LastErrorException;
     private static native long getpid() throws LastErrorException;
 
+    private static native long gettid() throws LastErrorException;
+
     public int callMlockall(int flags) throws UnsatisfiedLinkError, RuntimeException
     {
         return mlockall(flags);
@@ -122,6 +126,35 @@ public class NativeLibraryLinux implements NativeLibraryWrapper
     public long callGetpid() throws UnsatisfiedLinkError, RuntimeException
     {
         return getpid();
+    }
+
+    public long callGettid() throws UnsatisfiedLinkError, RuntimeException {
+        return gettid();
+    }
+
+    public long getThreadMajorPFCount() throws UnsatisfiedLinkError, RuntimeException {
+        // TODO: maybe a more efficient implemetation through syscall
+        long pid = getpid();
+        long tid = gettid();
+        // read from stat
+        // (12) majflt %lu
+        String filename = String.format("/proc/%d/task/%d/stat", pid, tid);
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(filename));
+            String line = reader.readLine();
+            reader.close();
+            // find the last ')' to skip `comm`
+            int i = line.lastIndexOf(')');
+            // skip 10 more blanks
+            for (int j = 0; j < 10; j++) {
+                i = line.indexOf(' ', i) + 1;
+            }
+            // extract the number
+            int j = line.indexOf(' ', i);
+            return Long.parseUnsignedLong(line, i, j, 10);
+        } catch (Exception e) {
+            throw new RuntimeException("Can not get major fault count: " + e.toString());
+        }
     }
 
     public boolean isAvailable()
