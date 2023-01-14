@@ -90,6 +90,8 @@ import org.apache.cassandra.utils.memory.MemtableAllocator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import org.apache.cassandra.tracing.PageFaultTracer;
+
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import static org.apache.cassandra.utils.Throwables.maybeFail;
@@ -1040,6 +1042,9 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
 
         public void run()
         {
+            PageFaultTracer flushPFTracer = new PageFaultTracer("Flush");
+            flushPFTracer.start();
+
             // mark writes older than the barrier as blocking progress, permitting them to exceed our memory limit
             // if they are stuck waiting on it, then wait for them all to complete
             writeBarrier.markBlocking();
@@ -1065,9 +1070,21 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             }
             // signal the post-flush we've done our work
             postFlush.latch.countDown();
+
+            flushPFTracer.end();
+            flushPFTracer.logStats(logger);
         }
 
-        public Collection<SSTableReader> flushMemtable(Memtable memtable, boolean flushNonCf2i)
+        public Collection<SSTableReader> flushMemtable(Memtable memtable, boolean flushNonCf2i) {
+            PageFaultTracer tracer = new PageFaultTracer("Flush");
+            tracer.start();
+            Collection<SSTableReader> result = flushMemtableImpl(memtable, flushNonCf2i);
+            tracer.end();
+            tracer.logStats(logger);
+            return result;
+        }
+
+        public Collection<SSTableReader> flushMemtableImpl(Memtable memtable, boolean flushNonCf2i)
         {
             if (memtable.isClean() || truncate)
             {
