@@ -50,6 +50,7 @@ import org.apache.cassandra.io.sstable.SSTableMultiWriter;
 import org.apache.cassandra.io.sstable.metadata.MetadataCollector;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.service.ActiveRepairService;
+import org.apache.cassandra.tracing.PageFaultTracer;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.cassandra.utils.FBUtilities;
 import org.apache.cassandra.utils.ObjectSizes;
@@ -449,12 +450,17 @@ public class Memtable implements Comparable<Memtable>
 
         private void writeSortedContents()
         {
+            PageFaultTracer tracer = new PageFaultTracer("writeSortedContents_for_loop");
+
             logger.info("Writing {}, flushed range = ({}, {}]", Memtable.this.toString(), from, to);
+            logger.info("partition count: {}", toFlush.size());
+            int processed_count = 0;
 
             boolean trackContention = logger.isTraceEnabled();
             int heavilyContendedRowCount = 0;
             // (we can't clear out the map as-we-go to free up memory,
             //  since the memtable is being used for queries in the "pending flush" category)
+            tracer.start();
             for (AtomicBTreePartition partition : toFlush.values())
             {
                 // Each batchlog partition is a separate entry in the log. And for an entry, we only do 2
@@ -470,12 +476,17 @@ public class Memtable implements Comparable<Memtable>
 
                 if (!partition.isEmpty())
                 {
+                    processed_count++;
                     try (UnfilteredRowIterator iter = partition.unfilteredIterator())
                     {
                         writer.append(iter);
                     }
                 }
             }
+            tracer.end();
+            tracer.logStats(logger);
+
+            logger.info("processed partition count: {}", processed_count);
 
             long bytesFlushed = writer.getFilePointer();
             logger.info("Completed flushing {} ({}) for commitlog position {}",
@@ -509,7 +520,11 @@ public class Memtable implements Comparable<Memtable>
         @Override
         public SSTableMultiWriter call()
         {
+            PageFaultTracer pfTracer = new PageFaultTracer("FlushRunnable");
+            pfTracer.start();
             writeSortedContents();
+            pfTracer.end();
+            pfTracer.logStats(logger);
             return writer;
         }
     }

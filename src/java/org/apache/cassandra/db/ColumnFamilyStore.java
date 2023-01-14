@@ -1075,16 +1075,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             flushPFTracer.logStats(logger);
         }
 
-        public Collection<SSTableReader> flushMemtable(Memtable memtable, boolean flushNonCf2i) {
-            PageFaultTracer tracer = new PageFaultTracer("Flush");
-            tracer.start();
-            Collection<SSTableReader> result = flushMemtableImpl(memtable, flushNonCf2i);
-            tracer.end();
-            tracer.logStats(logger);
-            return result;
-        }
-
-        public Collection<SSTableReader> flushMemtableImpl(Memtable memtable, boolean flushNonCf2i)
+        public Collection<SSTableReader> flushMemtable(Memtable memtable, boolean flushNonCf2i)
         {
             if (memtable.isClean() || truncate)
             {

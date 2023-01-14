@@ -21,6 +21,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.cassandra.db.RowIndexEntry;
 import org.apache.cassandra.db.SerializationHeader;
 import org.apache.cassandra.db.lifecycle.LifecycleNewTracker;
@@ -36,9 +39,11 @@ public class SimpleSSTableMultiWriter implements SSTableMultiWriter
 {
     private final SSTableWriter writer;
     private final LifecycleNewTracker lifecycleNewTracker;
+    private static final Logger logger = LoggerFactory.getLogger(SimpleSSTableMultiWriter.class);
 
     protected SimpleSSTableMultiWriter(SSTableWriter writer, LifecycleNewTracker lifecycleNewTracker)
     {
+        logger.info("class of writer: {}", writer.getClass().getCanonicalName());
         this.lifecycleNewTracker = lifecycleNewTracker;
         this.writer = writer;
     }

@@ -65,7 +65,7 @@ public class PageFaultTracer {
     }
 
     public void logStats(Logger logger) {
-        logger.info(String.format("[%s]: %s", name, stat.toString()));
+        logger.info("[{}]: {}", name, stat.toString());
     }
 
     public void start() {
