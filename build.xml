@@ -767,6 +767,7 @@
         <dependency groupId="org.junit" artifactId="junit-bom" version="5.6.0" type="pom"/>
         <dependency groupId="org.assertj" artifactId="assertj-core"/>
         <dependency groupId="org.awaitility" artifactId="awaitility"/>
+        <dependency groupId="org.openjdk.jol" artifactId="jol-core" version="0.16"/>
       </artifact:pom>
       <!-- this build-deps-pom-sources "artifact" is the same as build-deps-pom but only with those
            artifacts that have "-source.jar" files -->
