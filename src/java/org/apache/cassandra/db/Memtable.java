@@ -17,6 +17,8 @@
  */
 package org.apache.cassandra.db;
 
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,6 +56,7 @@ import org.apache.cassandra.service.ActiveRepairService;
 import org.apache.cassandra.tracing.PageFaultTracer;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.cassandra.utils.FBUtilities;
+import org.apache.cassandra.utils.NativeLibrary;
 import org.apache.cassandra.utils.ObjectSizes;
 import org.apache.cassandra.utils.concurrent.OpOrder;
 import org.apache.cassandra.utils.memory.HeapPool;
@@ -62,6 +65,10 @@ import org.apache.cassandra.utils.memory.MemtablePool;
 import org.apache.cassandra.utils.memory.NativePool;
 import org.apache.cassandra.utils.memory.SlabPool;
 
+import org.openjdk.jol.vm.VM;
+import org.openjdk.jol.vm.VirtualMachine;
+
+import java.text.SimpleDateFormat;
 public class Memtable implements Comparable<Memtable>
 {
     private static final Logger logger = LoggerFactory.getLogger(Memtable.class);
@@ -452,6 +459,7 @@ public class Memtable implements Comparable<Memtable>
         private void writeSortedContents()
         {
             PageFaultTracer tracer = new PageFaultTracer("writeSortedContents_for_loop");
+            PageFaultTracer iterNextTracer = new PageFaultTracer("writeSortedContents_iter_next");
 
             logger.info("Writing {}, flushed range = ({}, {}]", Memtable.this.toString(), from, to);
             logger.info("partition count: {}", toFlush.size());
@@ -459,34 +467,56 @@ public class Memtable implements Comparable<Memtable>
 
             boolean trackContention = logger.isTraceEnabled();
             int heavilyContendedRowCount = 0;
-            // (we can't clear out the map as-we-go to free up memory,
-            //  since the memtable is being used for queries in the "pending flush" category)
-            tracer.start();
-            for (AtomicBTreePartition partition : toFlush.values())
-            {
-                // Each batchlog partition is a separate entry in the log. And for an entry, we only do 2
-                // operations: 1) we insert the entry and 2) we delete it. Further, BL data is strictly local,
-                // we don't need to preserve tombstones for repair. So if both operation are in this
-                // memtable (which will almost always be the case if there is no ongoing failure), we can
-                // just skip the entry (CASSANDRA-4667).
-                if (isBatchLogTable && !partition.partitionLevelDeletion().isLive() && partition.hasRows())
-                    continue;
 
-                if (trackContention && partition.useLock())
-                    heavilyContendedRowCount++;
+            try {
+                // String flushAddrLogFileName = String.format("/tmp/flush_addr_%d", NativeLibrary.getThreadID());
+                // logger.info("Logging partition address to {}", flushAddrLogFileName);
+                // DataOutputStream flushAddrLog = new DataOutputStream(new FileOutputStream(flushAddrLogFileName));
+                // VirtualMachine vm = VM.current();
 
-                if (!partition.isEmpty())
-                {
-                    processed_count++;
-                    try (UnfilteredRowIterator iter = partition.unfilteredIterator())
-                    {
-                        writer.append(iter);
+                // (we can't clear out the map as-we-go to free up memory,
+                // since the memtable is being used for queries in the "pending flush" category)
+                tracer.start();
+                Collection<AtomicBTreePartition> parts = toFlush.values();
+                Iterator<AtomicBTreePartition> partIter = parts.iterator();
+                while (partIter.hasNext()) {
+                    iterNextTracer.start();
+                    AtomicBTreePartition partition = partIter.next();
+                    iterNextTracer.end();
+                    // flushAddrLog.writeLong(System.currentTimeMillis());
+                    // flushAddrLog.writeLong(vm.addressOf(partition));
+                    // flushAddrLog.writeLong(vm.sizeOf(partition));
+                    // Each batchlog partition is a separate entry in the log. And for an entry, we
+                    // only do 2
+                    // operations: 1) we insert the entry and 2) we delete it. Further, BL data is
+                    // strictly local,
+                    // we don't need to preserve tombstones for repair. So if both operation are in
+                    // this
+                    // memtable (which will almost always be the case if there is no ongoing
+                    // failure), we can
+                    // just skip the entry (CASSANDRA-4667).
+                    if (isBatchLogTable && !partition.partitionLevelDeletion().isLive() && partition.hasRows())
+                        continue;
+
+                    if (trackContention && partition.useLock())
+                        heavilyContendedRowCount++;
+
+                    if (!partition.isEmpty()) {
+                        processed_count++;
+                        try (UnfilteredRowIterator iter = partition.unfilteredIterator()) {
+                            writer.append(iter);
+                        }
                     }
                 }
+                tracer.end();
+                iterNextTracer.logStats(logger);
+                tracer.logStats(logger);
+                writer.logTraceData();
+
+                // flushAddrLog.close();
+            } catch (Exception e) {
+                logger.error("{}", e.toString());
             }
-            tracer.end();
-            tracer.logStats(logger);
-            writer.logTraceData();
 
             logger.info("processed partition count: {}", processed_count);
 
