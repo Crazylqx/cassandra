@@ -33,6 +33,10 @@ import org.apache.cassandra.utils.btree.BTree;
 
 import static org.apache.cassandra.utils.btree.BTree.Dir.desc;
 
+import java.io.DataOutputStream;
+import org.openjdk.jol.vm.VirtualMachine;
+import java.io.IOException;
+
 public abstract class AbstractBTreePartition implements Partition, Iterable<Row>
 {
     protected static final Holder EMPTY = new Holder(RegularAndStaticColumns.NONE, BTree.empty(), DeletionInfo.LIVE, Rows.EMPTY_STATIC_ROW, EncodingStats.NO_STATS);
@@ -64,6 +68,15 @@ public abstract class AbstractBTreePartition implements Partition, Iterable<Row>
             this.staticRow = staticRow == null ? Rows.EMPTY_STATIC_ROW : staticRow;
             this.stats = stats;
         }
+    }
+
+    public void logFieldAddr(DataOutputStream addrLog, VirtualMachine vm) throws IOException {
+        Holder current = holder();
+        addrLog.writeLong(vm.addressOf(current));
+        for (Object t : current.tree) {
+            addrLog.writeLong(vm.addressOf(t));
+        }
+        addrLog.writeLong(0);
     }
 
     public DeletionInfo deletionInfo()

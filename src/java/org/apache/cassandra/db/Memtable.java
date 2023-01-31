@@ -17,6 +17,9 @@
  */
 package org.apache.cassandra.db;
 
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,6 +63,9 @@ import org.apache.cassandra.utils.memory.MemtableAllocator;
 import org.apache.cassandra.utils.memory.MemtablePool;
 import org.apache.cassandra.utils.memory.NativePool;
 import org.apache.cassandra.utils.memory.SlabPool;
+
+import org.openjdk.jol.vm.VM;
+import org.openjdk.jol.vm.VirtualMachine;
 
 public class Memtable implements Comparable<Memtable>
 {
@@ -288,6 +294,18 @@ public class Memtable implements Comparable<Memtable>
     public int partitionCount()
     {
         return partitions.size();
+    }
+
+    public void logPartAddr(String filename) throws IOException {
+        logger.info("Logging partition address to {}", filename);
+        DataOutputStream addrLog = new DataOutputStream(new FileOutputStream(filename));
+        VirtualMachine vm = VM.current();
+        logger.info("partition key class: {}", partitions.firstKey().getClass().getCanonicalName());
+        for (AtomicBTreePartition p : partitions.values()) {
+            addrLog.writeLong(vm.addressOf(p));
+            p.logFieldAddr(addrLog, vm);
+        }
+        addrLog.close();
     }
 
     public List<FlushRunnable> flushRunnables(LifecycleTransaction txn)

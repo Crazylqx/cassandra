@@ -879,6 +879,14 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     }
 
 
+    public void logAddrDist(String fileName) throws IOException {
+        synchronized (data) {
+            Memtable current = data.getView().getCurrentMemtable();
+            logger.info("partition count: {}", current.partitionCount());
+            current.logPartAddr(fileName);
+        }
+    }
+
     /**
      * Flush if there is unflushed data in the memtables
      *

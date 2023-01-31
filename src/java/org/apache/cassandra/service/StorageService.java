@@ -3936,6 +3936,13 @@ public class StorageService extends NotificationBroadcasterSupport implements IE
         }
     }
 
+    public void logAddrDist(String logFileName, String keyspaceName, String... tableNames) throws IOException {
+        for (ColumnFamilyStore cfStore : getValidColumnFamilies(true, false, keyspaceName, tableNames)) {
+            logger.info("logAddrDist on keyspace {}, CF {}", keyspaceName, cfStore.name);
+            cfStore.logAddrDist(logFileName);
+        }
+    }
+
     public int repairAsync(String keyspace, Map<String, String> repairSpec)
     {
         return repair(keyspace, repairSpec, Collections.emptyList()).left;
