@@ -79,6 +79,16 @@ public abstract class AbstractBTreePartition implements Partition, Iterable<Row>
         addrLog.writeLong(0);
     }
 
+    public long sumFieldAddr(VirtualMachine vm) {
+        long sum = 0;
+        Holder current = holder();
+        sum += vm.addressOf(current);
+        for (Object t : current.tree) {
+            sum += vm.addressOf(t);
+        }
+        return sum;
+    }
+
     public DeletionInfo deletionInfo()
     {
         return holder().deletionInfo;

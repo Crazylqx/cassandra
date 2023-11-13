@@ -887,6 +887,11 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         }
     }
 
+    public long sumAddr() {
+        Memtable current = data.getView().getCurrentMemtable();
+        return current.sumPartAddr();
+    }
+
     /**
      * Flush if there is unflushed data in the memtables
      *

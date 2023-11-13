@@ -94,6 +94,7 @@ public class NodeTool
     {
         List<Class<? extends NodeToolCmdRunnable>> commands = newArrayList(
                 AddrDist.class,
+                ScanMemtable.class,
                 CassHelp.class,
                 Info.class,
                 Ring.class,

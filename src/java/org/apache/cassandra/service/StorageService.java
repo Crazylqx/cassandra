@@ -3943,6 +3943,14 @@ public class StorageService extends NotificationBroadcasterSupport implements IE
         }
     }
 
+    public long sumAddr(String keyspaceName, String... tableNames) throws IOException {
+        long sum = 0;
+        for (ColumnFamilyStore cfStore : getValidColumnFamilies(true, false, keyspaceName, tableNames)) {
+            sum += cfStore.sumAddr();
+        }
+        return sum;
+    }
+
     public int repairAsync(String keyspace, Map<String, String> repairSpec)
     {
         return repair(keyspace, repairSpec, Collections.emptyList()).left;

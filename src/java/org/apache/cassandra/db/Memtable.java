@@ -308,6 +308,16 @@ public class Memtable implements Comparable<Memtable>
         addrLog.close();
     }
 
+    public long sumPartAddr() {
+        VirtualMachine vm = VM.current();
+        long sum = 0;
+        for (AtomicBTreePartition p : partitions.values()) {
+            sum += vm.addressOf(p);
+            sum += p.sumFieldAddr(vm);
+        }
+        return sum;
+    }
+
     public List<FlushRunnable> flushRunnables(LifecycleTransaction txn)
     {
         return createFlushRunnables(txn);

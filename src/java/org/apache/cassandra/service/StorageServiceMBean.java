@@ -41,6 +41,8 @@ public interface StorageServiceMBean extends NotificationEmitter
 {
     public void logAddrDist(String logFileName, String keyspaceName, String... tableNames) throws IOException;
 
+    public long sumAddr(String keyspaceName, String... tableNames) throws IOException;
+
     /**
      * Retrieve the list of live nodes in the cluster, where "liveness" is
      * determined by the failure detector of the node being queried.
